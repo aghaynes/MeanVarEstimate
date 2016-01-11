@@ -5,22 +5,6 @@ Estimators for mean are hozo4, hozo5, median, wan1, wan2, wan3 and bland.
 
 Estimators for variance are hozo12, hozo15, range4, range6, wan1, wan2, wan3, bland, hozoc, cochran.
 
-Different estimators require different inputs. 
-For mean, these are :
-
-Method	minimum	25th	median	75th	Maximum	N	Preference	Preference
-Hozo4	X				X			
-Hozo5	X				X			
-Wan1	X				X	X	X	
-								
-Median			X					
-								
-Wan2	X		X		X			
-Wan3		X	X	X		X		
-								
-Bland	X	X	X	X	X			
-
-
 Usage:
 
 mean_fnc(min, max, med, q1, q3, n, type = "hozo4")

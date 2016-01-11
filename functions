@@ -1,0 +1,156 @@
+# variance FUNCTION 
+# - ESTIMATE VARIANCE FROM MIN, MAX, etc
+var_fn <- function(min, max, med, q1, q3, n, type = "auto", var = NULL){
+  
+  # type = hozo12; hozo15; range4; range6
+  if(!type %in% c("hozo12", "hozo15", "range4", 
+                  "range6", "wan1", "wan2", "wan3", 
+                  "bland", "hozoc", "cochran")){
+    stop("type must be one of hozo12, hozo15, range4, range6, wan1, wan2, wan3, bland, cochran")
+    }
+  if(is.null(var)) var <- rep(NA, length(min))
+  
+  a <- min; b <- max; m <- med
+  # subfunctions
+  hozo12 <- function(a, m, b){
+    bracket3 <- n*(((a+2*m+b)/4)+((a-2*m+b)/(4*n)))^2
+    bracket2 <- ((n-3)/2)*(((a+m)^2 + (m+b)^2)/4)
+    S2 <- (1/(n-1))*(a^2 + m^2 + b^2 + bracket2 - bracket3)
+    out <- list(hat = S2, i = apply(data.frame(a, m, b), 1, function(x) all(!is.na(x))))
+    out
+  }
+  hozo15 <- function(a, m, b, n){
+    S2 <- ((n+1)/(48*n*(n-1)^2))*((n^2+3)*(a-2*m+b)^2+4*(n^2)*((b-a)^2))
+    out <- list(hat = S2, i = apply(data.frame(a, m, b, n), 1, function(x) all(!is.na(x))))
+    out
+  }
+  hozo16 <- function(a, m, b, n){
+    S2 <- ((n+1)/(48*n*(n-1)^2))*((n^2+3)*(a-2*m+b)^2+4*(n^2)*((b-a)^2))
+    out <- list(hat = S2, i = apply(data.frame(a, m, b, n), 1, function(x) all(!is.na(x))))
+    out
+  }
+  hozoc <- function(a, m, b, n){
+    s <- rep(NA, length(min))
+    i1 <- n <= 15 & apply(data.frame(a, m, b), 1, function(x) all(!is.na(x)))
+    s[i1] <- ((((b - a)^2 + ((a + b - 2*m)^2)/4))/12)[i1]
+    i2 <- n > 15 & n <=70 & apply(data.frame(a, b), 1, function(x) all(!is.na(x)))
+    s[i2] <- range4(a, b)$hat[i2]
+    i3 <- n > 70 & apply(data.frame(a, b), 1, function(x) all(!is.na(x)))
+    s[i3] <- range6(a, b)$hat[i3]
+    S2 <- s^2
+    out <- list(hat = S2, i = (i1 | i2 | i3))
+    out
+  }
+  range4 <- function(a, b){
+    r <- b - a
+    s <- r/4
+    S2 <- s^2
+    out <- list(hat = S2, i = apply(data.frame(a, b), 1, function(x) all(!is.na(x))))
+    out
+  }
+  range6 <- function(a, b){
+    r <- b - a
+    s <- r/6
+    S2 <- s^2
+    out <- list(hat = S2, i = apply(data.frame(a, b), 1, function(x) all(!is.na(x))))
+    out
+  }
+  wan1 <- function(a, b, n){
+    s <- (b-a)/(2*qnorm((n-0.375)/(n+0.25),0,1))
+    S2 <- s^2
+    out <- list(hat = S2, i = apply(data.frame(a, b, n), 1, function(x) all(!is.na(x))))
+    out
+  }
+  wan2 <- function(a, b, q1, q3, n){
+    s <- ((b-a)/(4*qnorm((n-0.375)/(n+0.25)))) + ((q3-q1)/(4*qnorm(((0.75*n)-0.125)/(n+0.25))))
+    S2 <- s^2
+    out <- list(hat = S2, i = apply(data.frame(a, b, q1, q3, n), 1, function(x) all(!is.na(x))))
+    out
+  }
+  wan3 <- function(q1, q3, n){
+    s <- (q3-q1)/(2*qnorm((0.75*n-0.125)/(n+0.25),0,1))
+    S2 <- s^2
+    out <- list(hat = S2, i = apply(data.frame(q1, q3, n), 1, function(x) all(!is.na(x))))
+    out
+  }
+  bland <- function(a, m, b, q1, q3){
+    S2 <- ((a^2 + 2*(q1^2)+2*(m^2)+2*(q3^2)+b^2)/16)+((a*q1+q1*m+m*q3+q3*b)/8)-((a+2*q1+2*m+2*q3+b)*(a+2*q1+2*m+2*q3+b)/64)
+    out <- list(hat = S2, i = apply(data.frame(a, m, b, q1, q3), 1, function(x) all(!is.na(x))))
+    out
+  }
+  cochran <- function(q1, q3){
+    s <- (q3-q1)/1.35
+    S2 <- s^2
+    out <- list(hat = S2, i = apply(data.frame(q1, q3), 1, function(x) all(!is.na(x))))
+    out
+  }
+  
+  if(type == "hozo12"){ # formula 12
+    variance <- hozo12(a, m, b)
+  }
+  if(type == "hozo15"){ # formula 15
+    variance <- hozo15(a, m, b, n)
+  }
+  if(type == "hozo16"){ # formula 15
+    variance <- hozo16(a, m, b, n)
+  }
+  if(type == "hozoc"){ # conclusion - method dependant on sample size
+    variance <- hozoc(a, m, b, n)
+  }
+  if(type == "range4"){ # range/4
+    variance <- range4(a, b)
+  }
+  if(type == "range6"){ # range/6
+    variance <- range6(a, b)
+  }
+  if(type == "wan1"){ 
+    variance <- wan1(a, b, n)
+  }
+  if(type == "wan2"){
+    variance <- wan2(a, b, q1, q3, n)
+  }
+  if(type == "wan3"){
+    variance <- wan3(q1, q3, n)
+  }
+  if(type == "bland"){
+    variance <- bland(a, m, b, q1, q3)
+  }
+  if(type == "cochran"){
+    variance <- cochran(q1, q3)
+  }
+  S2 <- variance$hat
+  i <- variance$i
+  var[is.na(var) & i] <- S2[is.na(var) & i]
+} 
+
+# sqrt(var_fn(.01, .05, 0.03, .02, .04, n=100, type = "wan1"))
+# sqrt(var_fn(.01, .05, 0.03, .02, .04, n=100, type = "wan2"))
+# sqrt(var_fn(.01, .05, 0.03, .02, .04, n=100, type = "wan3"))
+# sqrt(var_fn(.01, .05, 0.03, .02, .04, n=100, type = "wan1"))
+# sqrt(var_fn(.01, .05, 0.03, .02, .04, n=100, type = "bland"))
+# sqrt(var_fn(.01, .05, 0.03, .02, .04, n=100, type = "hozoc"))
+
+
+
+# MEAN FUNCTION, formulae from Hozo et al 2005 
+# - ESTIMATE MEAN FROM MIN, MAX, etc
+mean_fnc <- function(min, max, med, q1, q3, n, type = "hozo4", var = NULL){
+  if(is.null(var)) var <- rep(NA, length(min))
+  if(type == "hozo4"){
+    mean_hat <- ((min + 2*med + max)/4) + ((min - 2*med + max)/(4*n))
+  }
+  if(type == "hozo5"){
+    mean_hat <- ((min + 2*med + max)/4)
+    cat("\nOnly suitable for large samples")
+  }
+  if(type == "median") mean_hat <- med
+  if(type == "wan1") mean_hat <- (min+(2*med)+max)/4
+  if(type == "wan2") mean_hat <- (min+(2*q1)+(2*med)+(2*q3)+max)/8
+  if(type == "wan3") mean_hat <- (q1+med+q3)/3
+  if(type == "bland") mean_hat <- (min+2*q1+2*med+2*q3+max)/8
+  var[is.na(var)] <- mean_hat[is.na(var)]
+}
+
+# mean_fnc(.01, .05, 0.03, n=100, type = "wan1")
+# mean_fnc(.01, .05, 0.03, .02, .04, n=100, type = "wan2")
+# mean_fnc(.01, .05, 0.03, .02, .04, n=100, type = "wan3")

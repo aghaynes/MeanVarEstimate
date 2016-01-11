@@ -121,6 +121,7 @@ var_fn <- function(min, max, med, q1, q3, n, type = "auto", var = NULL){
   S2 <- variance$hat
   i <- variance$i
   var[is.na(var) & i] <- S2[is.na(var) & i]
+  var
 } 
 
 # sqrt(var_fn(.01, .05, 0.03, .02, .04, n=100, type = "wan1"))
@@ -149,6 +150,7 @@ mean_fnc <- function(min, max, med, q1, q3, n, type = "hozo4", var = NULL){
   if(type == "wan3") mean_hat <- (q1+med+q3)/3
   if(type == "bland") mean_hat <- (min+2*q1+2*med+2*q3+max)/8
   var[is.na(var)] <- mean_hat[is.na(var)]
+  var
 }
 
 # mean_fnc(.01, .05, 0.03, n=100, type = "wan1")
